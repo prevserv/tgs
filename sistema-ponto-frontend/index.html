@@ -1,0 +1,479 @@
+﻿<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema de Ponto - Teste</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="blob-bg">
+      <div class="blob a"></div>
+      <div class="blob b"></div>
+      <div class="blob c"></div>
+    </div>
+
+    <section id="authGate" class="authGate">
+      <div class="authCard">
+        <h1>TGS</h1>
+        <p class="muted">Faça login para acessar o sistema.</p>
+
+        <div class="grid">
+          <label>
+            CPF
+            <input id="loginCpf" type="text" placeholder="00000000000" />
+          </label>
+          <label>
+            Senha
+            <input id="loginPassword" type="password" placeholder="123456" />
+          </label>
+          <button id="btnLogin">Entrar</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="app" id="appRoot" hidden>
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brandTitle">Sistema de Ponto</div>
+          <div class="brandSub">Minimal - Monochrome</div>
+        </div>
+
+        <nav class="nav">
+          <button class="navItem active" data-view="view-dashboard">
+            Dashboard
+          </button>
+          <button class="navItem" data-view="view-ponto">Bater ponto</button>
+          <button class="navItem" data-view="view-consultas">Consultas</button>
+
+          <div class="navDivider"></div>
+          <div class="navLabel">Admin</div>
+
+          <button class="navItem" data-view="view-admin-users">Usuários</button>
+          <button class="navItem" data-view="view-admin-alerts">Alertas</button>
+        </nav>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <div class="topTitle" id="topTitle">Dashboard</div>
+            <div class="topSub" id="topSub">Visão geral do sistema</div>
+          </div>
+          <div class="topActions">
+            <button
+              id="btnMenu"
+              class="menuBtn secondary"
+              aria-label="Abrir menu"
+            >
+              ☰
+            </button>
+            <span class="pill" id="pillAuth">Deslogado</span>
+            <button id="btnTopLogout" class="secondary">Sair</button>
+          </div>
+        </header>
+
+        <div class="content">
+          <section class="view active" id="view-dashboard">
+            <header class="header">
+              <h1>Sistema de Ponto</h1>
+              <p>Ambiente de Admin / Ponto / Consultas / Alertas</p>
+            </header>
+
+            <section class="card">
+              <h2>Bem-vindo</h2>
+              <p class="muted">Pagina em desenvolvimento</p>
+            </section>
+          </section>
+
+          <section class="view" id="view-ponto">
+            <!-- Bater ponto -->
+            <section class="card">
+              <h2>Bater ponto</h2>
+              <p class="muted">Requer geolocalização no momento da batida.</p>
+
+              <div class="row between">
+                <div>
+                  <div class="clock" id="clock">--:--</div>
+                  <div class="muted" id="clockDate">--</div>
+                </div>
+
+                <div class="right">
+                  <div>
+                    <strong>Status:</strong> <span id="journeyStatus">-</span>
+                  </div>
+                  <button id="btnRefreshStatus" class="secondary">
+                    Atualizar status
+                  </button>
+                </div>
+              </div>
+              <div class="row">
+                <label>
+                  Ordem de serviço (OS)
+                  <select id="soSelect">
+                    <option value="">Automático</option>
+                  </select>
+                </label>
+
+                <button id="btnLoadSO" class="secondary">
+                  Carregar OS ativas
+                </button>
+              </div>
+
+              <div class="muted" id="soOut">OS: -</div>
+
+              <div class="row">
+                <button id="btnClock" disabled>Carregando...</button>
+              </div>
+
+              <div class="row">
+                <button id="btnGetGeo" class="secondary">
+                  Capturar localização
+                </button>
+                <div class="muted" id="geoOut">Localização: -</div>
+              </div>
+            </section>
+          </section>
+
+          <section class="view" id="view-consultas">
+            <!-- Consulta de Registros -->
+            <section class="card">
+              <h2>Consulta de Registros</h2>
+              <p class="muted">Pagina de consulta de registros</p>
+
+              <div class="row">
+                <label>
+                  Data inicial
+                  <input id="fromDate" type="datetime-local" />
+                </label>
+
+                <label>
+                  Data final
+                  <input id="toDate" type="datetime-local" />
+                </label>
+              </div>
+
+              <div class="row">
+                <button id="btnMyEntries">Meus registros</button>
+
+                <div class="row" style="margin: 0">
+                  <label>
+                    Admin: user_id
+                    <input
+                      id="filterUserId"
+                      type="number"
+                      min="1"
+                      placeholder="ex: 2"
+                    />
+                  </label>
+
+                  <button id="btnEntriesByUser" class="secondary">
+                    Buscar por user_id
+                  </button>
+                  <button id="btnAllEntries" class="secondary">
+                    Listar todos (admin)
+                  </button>
+                </div>
+              </div>
+
+              <div class="row between">
+                <div class="muted" id="entriesInfo">-</div>
+                <button id="btnClearEntries" class="secondary">Limpar</button>
+              </div>
+
+              <div class="tableWrap">
+                <table class="table" id="entriesTable">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Usuários</th>
+                      <th>Tipo</th>
+                      <th>Data/Hora</th>
+                      <th>Lat</th>
+                      <th>Lng</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </section>
+          </section>
+
+          <section class="view" id="view-admin-users">
+            <!-- Admin: Criar usuário -->
+            <section class="card">
+              <h2>Admin: Criar usuário</h2>
+              <p class="muted">Requer token de um usuário com role ADMIN.</p>
+
+              <div class="grid">
+                <label>
+                  Nome
+                  <input id="newName" type="text" placeholder="João" />
+                </label>
+                <label>
+                  CPF
+                  <input id="newCpf" type="text" placeholder="00000000000" />
+                </label>
+                <label>
+                  Senha
+                  <input
+                    id="newPassword"
+                    type="password"
+                    placeholder="123456"
+                  />
+                </label>
+                <label>
+                  Perfil
+                  <select id="newRole">
+                    <option value="USER">USER</option>
+                    <option value="ADMIN">ADMIN</option>
+                  </select>
+                </label>
+
+                <button id="btnCreateUser">Cadastrar</button>
+              </div>
+            </section>
+
+            <!-- Admin: Ativar/Desativar usuário -->
+            <section class="card">
+              <h2>Admin: Ativar/Desativar usuário</h2>
+              <p class="muted">Requer login com ADMIN.</p>
+
+              <div class="row">
+                <label>
+                  ID do usuário
+                  <input
+                    id="toggleUserId"
+                    type="number"
+                    min="1"
+                    placeholder="ex: 2"
+                  />
+                </label>
+
+                <label>
+                  Ação
+                  <select id="toggleActive">
+                    <option value="true">Ativar</option>
+                    <option value="false">Desativar</option>
+                  </select>
+                </label>
+
+                <button id="btnToggleActive">Aplicar</button>
+                <button id="btnListUsers" class="secondary">
+                  Listar usuários
+                </button>
+              </div>
+
+              <div class="row between">
+                <div class="muted" id="usersInfo">-</div>
+              </div>
+
+              <div class="tableWrap">
+                <table class="table" id="usersTable">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Nome</th>
+                      <th>CPF</th>
+                      <th>Perfil</th>
+                      <th>Status</th>
+                      <th>Criado em</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="card">
+              <h2>Admin: Ordens de serviço</h2>
+              <p class="muted">Criar, listar e atribuir OS. Requer ADMIN.</p>
+
+              <div class="grid">
+                <label>
+                  Título
+                  <input
+                    id="soTitle"
+                    type="text"
+                    placeholder="Ex.: Instalação de internet"
+                  />
+                </label>
+
+                <label>
+                  Local (texto)
+                  <input
+                    id="soLocation"
+                    type="text"
+                    placeholder="Ex.: Rua X, 123 - Centro"
+                  />
+                </label>
+
+                <label>
+                  Início previsto
+                  <input id="soExpectedStart" type="datetime-local" />
+                </label>
+
+                <label>
+                  Duração (horas)
+                  <input
+                    id="soDurationHours"
+                    type="number"
+                    min="1"
+                    value="12"
+                  />
+                </label>
+
+                <label style="grid-column: 1 / -1">
+                  Descrição
+                  <input
+                    id="soDescription"
+                    type="text"
+                    placeholder="Detalhes do serviço..."
+                  />
+                </label>
+
+                <button id="btnCreateSO">Criar OS</button>
+                <button id="btnListSO" class="secondary">Listar OS</button>
+              </div>
+
+              <div class="row">
+                <label>
+                  Atribuir: OS ID
+                  <input
+                    id="assignSoId"
+                    type="number"
+                    min="1"
+                    placeholder="ex: 10"
+                  />
+                </label>
+
+                <label>
+                  user_id
+                  <input
+                    id="assignUserId"
+                    type="number"
+                    min="1"
+                    placeholder="ex: 2"
+                  />
+                </label>
+
+                <button id="btnAssignSO">Atribuir OS</button>
+              </div>
+
+              <div class="tableWrap">
+                <table class="table" id="soTable">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Titulo</th>
+                      <th>Status</th>
+                      <th>Inicio</th>
+                      <th>Duração</th>
+                      <th>Local</th>
+                      <th>Criada por</th>
+                      <th>Ação</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+
+              <!-- <pre id="soAdminJson" class="out"></pre> -->
+            </section>
+          </section>
+
+          <section class="view" id="view-admin-alerts">
+            <!-- Admin: Alertas -->
+            <section class="card">
+              <h2>Admin: Alertas</h2>
+              <p class="muted">
+                Fila auditável de inconsistÃªncias. Requer ADMIN.
+              </p>
+
+              <div class="row">
+                <label>
+                  Status
+                  <select id="alertStatus">
+                    <option value="open" selected>open</option>
+                    <option value="resolved">resolved</option>
+                  </select>
+                </label>
+
+                <label>
+                  user_id
+                  <input
+                    id="alertUserId"
+                    type="number"
+                    min="1"
+                    placeholder="ex: 2"
+                  />
+                </label>
+
+                <label>
+                  Severidade
+                  <select id="alertSeverity">
+                    <option value="">(todas)</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                  </select>
+                </label>
+
+                <label>
+                  Limite
+                  <input
+                    id="alertLimit"
+                    type="number"
+                    min="1"
+                    max="100"
+                    value="20"
+                  />
+                </label>
+
+                <label>
+                  Offset
+                  <input id="alertOffset" type="number" min="0" value="0" />
+                </label>
+
+                <button id="btnLoadAlerts">Buscar</button>
+                <button id="btnClearAlerts" class="secondary">Limpar</button>
+              </div>
+
+              <div class="row between">
+                <div class="muted" id="alertsInfo">-</div>
+              </div>
+
+              <div class="tableWrap">
+                <table class="table" id="alertsTable">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Tipo</th>
+                      <th>Sev</th>
+                      <th>Usuários</th>
+                      <th>IN ref</th>
+                      <th>Criado em</th>
+                      <th>Nota</th>
+                      <th>Resolvido em</th>
+                      <th>Ação</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </section>
+          </section>
+        </div>
+      </main>
+    </div>
+    <div id="navBackdrop" class="navBackdrop"></div>
+    <div
+      id="toastContainer"
+      class="toastContainer"
+      aria-live="polite"
+      aria-atomic="true"
+    ></div>
+
+    <script src="routes.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
