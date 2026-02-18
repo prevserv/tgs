@@ -24,20 +24,7 @@ const corsOrigins = String(process.env.CORS_ORIGINS || "")
 app.disable("x-powered-by");
 if (trustProxy) app.set("trust proxy", trustProxy);
 
-app.use(
-  cors({
-    origin(origin, callback) {
-      if (!origin) return callback(null, true);
-      if (corsOrigins.length === 0) {
-        if (isProduction) return callback(new Error("CORS origin not allowed"));
-        return callback(null, true);
-      }
-      if (corsOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error("CORS origin not allowed"));
-    },
-    credentials: true,
-  }),
-);
+app.use(cors());
 app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || "100kb" }));
 
 app.use((req, res, next) => {

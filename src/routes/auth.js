@@ -24,9 +24,8 @@ const loginRateLimit = createRateLimit({
   },
 });
 
-router.post("/login", loginRateLimit, (req, res) => {
+router.post("/login", loginRateLimit, async (req, res) => {
   const parsed = loginSchema.safeParse(req.body);
-
   if (!parsed.success) {
     return res.status(400).json({ error: "Dados invalidos" });
   }
@@ -38,18 +37,18 @@ router.post("/login", loginRateLimit, (req, res) => {
     return res.status(400).json({ error: "CPF invalido" });
   }
 
-  const user = db.prepare("SELECT * FROM users WHERE cpf = ?").get(cpf);
+  const userResult = await db.query("SELECT * FROM users WHERE cpf = $1", [cpf]);
+  const user = userResult.rows[0];
 
   if (!user) {
     return res.status(400).json({ error: "CPF ou senha invalidos" });
   }
 
-  if (user.is_active === 0) {
+  if (Number(user.is_active) === 0) {
     return res.status(403).json({ error: "Usuario desativado" });
   }
 
   const ok = bcrypt.compareSync(password, user.password_hash);
-
   if (!ok) {
     return res.status(400).json({ error: "CPF ou senha invalidos" });
   }

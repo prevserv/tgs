@@ -1,6 +1,10 @@
 const fs = require("fs");
 const path = require("path");
 const { Client } = require("pg");
+const dotenv = require("dotenv");
+
+dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, "../../.env"), override: false });
 
 async function main() {
   const connectionString = process.env.DATABASE_URL;

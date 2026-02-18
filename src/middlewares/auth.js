@@ -1,7 +1,7 @@
 const { verifyToken } = require("../utils/jwt");
 const { db } = require("../db/database");
 
-function authRequired(req, res, next) {
+async function authRequired(req, res, next) {
   const header = req.headers.authorization || "";
   const [type, token] = header.split(" ");
 
@@ -16,11 +16,13 @@ function authRequired(req, res, next) {
       return res.status(401).json({ error: "Token invalido" });
     }
 
-    const user = db
-      .prepare("SELECT id, name, cpf, role, is_active FROM users WHERE id = ?")
-      .get(payload.id);
+    const result = await db.query(
+      "SELECT id, name, cpf, role, is_active FROM users WHERE id = $1",
+      [payload.id],
+    );
+    const user = result.rows[0];
 
-    if (!user || user.is_active === 0) {
+    if (!user || Number(user.is_active) === 0) {
       return res.status(401).json({ error: "Usuario inativo ou inexistente" });
     }
 

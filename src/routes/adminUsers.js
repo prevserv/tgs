@@ -8,7 +8,7 @@ const { normalizeCpf } = require("../utils/cpf");
 
 const router = express.Router();
 
-router.post("/users", authRequired, requireRole("ADMIN"), (req, res) => {
+router.post("/users", authRequired, requireRole("ADMIN"), async (req, res) => {
   const schema = z.object({
     name: z.string().min(2),
     cpf: z.string().min(11).max(14),
@@ -18,35 +18,26 @@ router.post("/users", authRequired, requireRole("ADMIN"), (req, res) => {
 
   const parsed = schema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({
-      error: "Dados inválidos",
-      details: parsed.error.flatten(),
-    });
+    return res.status(400).json({ error: "Dados invalidos", details: parsed.error.flatten() });
   }
 
   const { name, password, role } = parsed.data;
   const cpf = normalizeCpf(parsed.data.cpf);
-  if (cpf.length !== 11) {
-    return res.status(400).json({ error: "CPF inválido" });
-  }
-  const exist = db.prepare("SELECT id FROM users WHERE cpf = ?").get(cpf);
-  if (exist) return res.status(409).json({ error: "CPF já cadastrado" });
+  if (cpf.length !== 11) return res.status(400).json({ error: "CPF invalido" });
+
+  const existResult = await db.query("SELECT id FROM users WHERE cpf = $1", [cpf]);
+  if (existResult.rows[0]) return res.status(409).json({ error: "CPF ja cadastrado" });
 
   const password_hash = bcrypt.hashSync(password, 10);
-  const stmt = db.prepare(
-    "INSERT INTO users (name, cpf, password_hash, role) VALUES (?, ?, ?, ?)",
+  const insertResult = await db.query(
+    "INSERT INTO users (name, cpf, password_hash, role) VALUES ($1, $2, $3, $4) RETURNING id",
+    [name, cpf, password_hash, role],
   );
-  const info = stmt.run(name, cpf, password_hash, role);
 
-  return res.status(201).json({
-    id: Number(info.lastInsertRowid),
-    name,
-    cpf,
-    role,
-  });
+  return res.status(201).json({ id: Number(insertResult.rows[0].id), name, cpf, role });
 });
 
-router.get("/users", authRequired, requireRole("ADMIN"), (req, res) => {
+router.get("/users", authRequired, requireRole("ADMIN"), async (req, res) => {
   const schema = z.object({
     q: z.string().optional(),
     limit: z.string().optional(),
@@ -54,47 +45,52 @@ router.get("/users", authRequired, requireRole("ADMIN"), (req, res) => {
   });
 
   const parsed = schema.safeParse(req.query);
-  if (!parsed.success) return res.status(400).json({ error: "Query inválida" });
+  if (!parsed.success) return res.status(400).json({ error: "Query invalida" });
 
   const q = (parsed.data.q || "").trim();
   const limit = Math.min(Number(parsed.data.limit || 20), 100);
   const offset = Math.max(Number(parsed.data.offset || 0), 0);
 
-  let rows;
-  let total;
-
   if (q) {
     const like = `%${q}%`;
-
-    total = db
-      .prepare(
-        `SELECT COUNT(*) as n FROM users WHERE name LIKE ? OR cpf LIKE ?`,
-      )
-      .get(like, like).n;
-
-    rows = db
-      .prepare(
-        `SELECT id, name, cpf, role, is_active, created_at
-    FROM users
-    WHERE name LIKE ? OR cpf LIKE ? ORDER BY id DESC
-    LIMIT ? OFFSET ?`,
-      )
-      .all(like, like, limit, offset);
-  } else {
-    total = db.prepare(`SELECT COUNT(*) as n FROM users`).get().n;
-
-    rows = db
-      .prepare(
-        `SELECT id, name, cpf, role, is_active, created_at FROM users ORDER BY id DESC LIMIT ? OFFSET ?`,
-      )
-      .all(limit, offset);
+    const totalResult = await db.query(
+      "SELECT COUNT(*)::int AS n FROM users WHERE name ILIKE $1 OR cpf ILIKE $2",
+      [like, like],
+    );
+    const rowsResult = await db.query(
+      `
+        SELECT id, name, cpf, role, is_active, created_at
+        FROM users
+        WHERE name ILIKE $1 OR cpf ILIKE $2
+        ORDER BY id DESC
+        LIMIT $3 OFFSET $4
+      `,
+      [like, like, limit, offset],
+    );
+    return res.json({
+      total: totalResult.rows[0].n,
+      limit,
+      offset,
+      users: rowsResult.rows,
+    });
   }
 
+  const totalResult = await db.query("SELECT COUNT(*)::int AS n FROM users");
+  const rowsResult = await db.query(
+    `
+      SELECT id, name, cpf, role, is_active, created_at
+      FROM users
+      ORDER BY id DESC
+      LIMIT $1 OFFSET $2
+    `,
+    [limit, offset],
+  );
+
   return res.json({
-    total,
+    total: totalResult.rows[0].n,
     limit,
     offset,
-    users: rows,
+    users: rowsResult.rows,
   });
 });
 
@@ -102,39 +98,31 @@ router.patch(
   "/users/:id/active",
   authRequired,
   requireRole("ADMIN"),
-  (req, res) => {
+  async (req, res) => {
     const id = Number(req.params.id);
-    if (!Number.isFinite(id) || id <= 0)
-      return res.status(400).json({ error: "ID inválido" });
+    if (!Number.isFinite(id) || id <= 0) {
+      return res.status(400).json({ error: "ID invalido" });
+    }
 
-    const schema = z.object({
-      is_active: z.boolean(),
-    });
-
+    const schema = z.object({ is_active: z.boolean() });
     const parsed = schema.safeParse(req.body);
-    if (!parsed.success)
-      return res
-        .status(400)
-        .json({ error: "Dados inválidos", details: parsed.error.flatten() });
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Dados invalidos", details: parsed.error.flatten() });
+    }
 
-    const exists = db.prepare("SELECT id FROM users WHERE id = ?").get(id);
-    if (!exists)
-      return res.status(404).json({ error: "Usuário não encontrado" });
+    const existsResult = await db.query("SELECT id FROM users WHERE id = $1", [id]);
+    if (!existsResult.rows[0]) {
+      return res.status(404).json({ error: "Usuario nao encontrado" });
+    }
 
     const isActiveInt = parsed.data.is_active ? 1 : 0;
+    await db.query("UPDATE users SET is_active = $1 WHERE id = $2", [isActiveInt, id]);
 
-    db.prepare("UPDATE users SET is_active = ? WHERE id = ?").run(
-      isActiveInt,
-      id,
+    const updatedResult = await db.query(
+      "SELECT id, name, cpf, role, is_active, created_at FROM users WHERE id = $1",
+      [id],
     );
-
-    const updated = db
-      .prepare(
-        "SELECT id, name, cpf, role, is_active, created_at FROM users WHERE id = ?",
-      )
-      .get(id);
-
-    return res.json({ user: updated });
+    return res.json({ user: updatedResult.rows[0] });
   },
 );
 

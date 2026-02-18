@@ -1,6 +1,10 @@
 const path = require("path");
 const Database = require("better-sqlite3");
 const { Client } = require("pg");
+const dotenv = require("dotenv");
+
+dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, "../../.env"), override: false });
 
 const SQLITE_DB_PATH =
   process.env.SQLITE_DB_PATH || path.join(__dirname, "app.db");

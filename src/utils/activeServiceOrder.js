@@ -1,9 +1,8 @@
 const { db } = require("../db/database");
 
-function getActiveServiceOrdersForUser(userId, nowIso) {
-  const rows = db
-    .prepare(
-      `
+async function getActiveServiceOrdersForUser(userId, nowIso) {
+  const result = await db.query(
+    `
     SELECT
       so.id,
       so.title,
@@ -12,48 +11,46 @@ function getActiveServiceOrdersForUser(userId, nowIso) {
       so.status
     FROM service_orders so
     JOIN service_order_assignments sa ON sa.service_order_id = so.id
-    WHERE sa.user_id = ?
+    WHERE sa.user_id = $1
       AND so.status = 'OPEN'
     ORDER BY so.expected_start DESC
   `,
-    )
-    .all(userId);
+    [userId],
+  );
 
+  const rows = result.rows;
   const now = Date.parse(nowIso);
   if (!Number.isFinite(now)) return [];
 
-  // Considera "ativa" se now está dentro da janela [start, start + duration]
-  // (MVP: sem tolerância; podemos adicionar depois)
   return rows.filter((so) => {
     const start = Date.parse(so.expected_start);
     if (!Number.isFinite(start)) return false;
-    const end = start + so.expected_duration_hours * 60 * 60 * 1000;
+    const end = start + Number(so.expected_duration_hours) * 60 * 60 * 1000;
     return now >= start && now <= end;
   });
 }
 
-function resolveSingleActiveServiceOrderId(userId, nowIso) {
-  const active = getActiveServiceOrdersForUser(userId, nowIso);
+async function resolveSingleActiveServiceOrderId(userId, nowIso) {
+  const active = await getActiveServiceOrdersForUser(userId, nowIso);
   if (active.length === 1) return active[0].id;
-  return null; // 0 ou >1: não decide sozinho
+  return null;
 }
 
-function assertUserCanUseServiceOrder(userId, serviceOrderId) {
-  const row = db
-    .prepare(
-      `
+async function assertUserCanUseServiceOrder(userId, serviceOrderId) {
+  const result = await db.query(
+    `
     SELECT so.id
     FROM service_orders so
     JOIN service_order_assignments sa ON sa.service_order_id = so.id
-    WHERE so.id = ?
-      AND sa.user_id = ?
+    WHERE so.id = $1
+      AND sa.user_id = $2
       AND so.status = 'OPEN'
     LIMIT 1
   `,
-    )
-    .get(serviceOrderId, userId);
+    [serviceOrderId, userId],
+  );
 
-  return !!row;
+  return result.rows.length > 0;
 }
 
 module.exports = {

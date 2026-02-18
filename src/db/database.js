@@ -1,10 +1,45 @@
-const Database = require("better-sqlite3");
+const { Pool } = require("pg");
 const path = require("path");
+const dotenv = require("dotenv");
 
-const dbPath = path.join(__dirname, "app.db");
-const db = new Database(dbPath);
+// Load .env from current cwd and repository root fallback.
+dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, "../../.env"), override: false });
 
-db.pragma("journal_mode = WAL");
-db.pragma("foreign_keys = ON");
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error("DATABASE_URL is required");
+}
 
-module.exports = { db };
+const pool = new Pool({
+  connectionString,
+  ssl: process.env.PG_SSL === "true" ? { rejectUnauthorized: false } : false,
+});
+
+async function query(text, params = []) {
+  return pool.query(text, params);
+}
+
+async function withTransaction(fn) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const tx = {
+      query(text, params = []) {
+        return client.query(text, params);
+      },
+    };
+    const result = await fn(tx);
+    await client.query("COMMIT");
+    return result;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+const db = { query, withTransaction };
+
+module.exports = { db, pool };
