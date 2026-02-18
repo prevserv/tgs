@@ -23,6 +23,17 @@ npm run migrate
 npm run create:admin
 ```
 
+## 3.1 Migração opcional para PostgreSQL
+1. Configurar `DATABASE_URL` no `.env`.
+2. Criar schema no Postgres:
+```bash
+npm run migrate:pg
+```
+3. Importar dados atuais do SQLite:
+```bash
+npm run migrate:data:pg
+```
+
 ## 4. Subir API
 ```bash
 npm ci --omit=dev
