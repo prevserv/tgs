@@ -1,27 +1,13 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 const { Client } = require("pg");
-const dotenv = require("dotenv");
-
-dotenv.config();
-dotenv.config({ path: path.resolve(__dirname, "../../.env"), override: false });
+const { getPgConnectionConfig } = require("./pgConfig");
 
 async function main() {
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    throw new Error("DATABASE_URL is required to run PostgreSQL migration");
-  }
-
   const schemaPath = path.join(__dirname, "postgres", "schema.sql");
   const schemaSql = fs.readFileSync(schemaPath, "utf8");
 
-  const client = new Client({
-    connectionString,
-    ssl: {
-      rejectUnauthorized: true,
-      ca: (process.env.DB_CA_CERT || "").replace(/\\n/g, "\n"),
-    },
-  });
+  const client = new Client(getPgConnectionConfig());
 
   await client.connect();
 
