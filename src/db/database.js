@@ -24,13 +24,13 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD,
   ssl: {
     rejectUnauthorized: true,
-    ca: process.env.DB_CA_CERT,
+    ca: process.env.DB_CA_CERT.replace(/\\n/g, "\n"),
   },
 
-  max: 10,                     // Maximum connections in pool
-  idleTimeoutMillis: 30000,    // Close idle connections after 30s
-  connectionTimeoutMillis: 5000 // Timeout for new connections
-})
+  max: 10, // Maximum connections in pool
+  idleTimeoutMillis: 30000, // Close idle connections after 30s
+  connectionTimeoutMillis: 5000, // Timeout for new connections
+});
 
 async function query(text, params = []) {
   return pool.query(text, params);
