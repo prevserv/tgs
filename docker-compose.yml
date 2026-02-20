@@ -1,0 +1,40 @@
+services:
+  app:
+    build: .
+    container_name: sistema-ponto-app
+    ports:
+      - "3001:3001"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/sistema_ponto
+      DB_HOST: db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: sistema_ponto
+      DB_PORT: 5432
+    depends_on:
+      - db
+    command: npm run dev
+
+  db:
+    image: postgres:16-alpine
+    container_name: sistema-ponto-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: sistema_ponto
+    ports:
+      - "5432:5432"
+
+  nginx:
+    image: nginx:alpine
+    container_name: sistema-ponto-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./sistema-ponto-frontend:/usr/share/nginx/html:ro
+    depends_on:
+      - app
