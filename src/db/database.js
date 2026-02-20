@@ -23,7 +23,8 @@ const pool = new Pool({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   ssl: {
-    rejectUnauthorized: true,
+    // rejectUnauthorized: true,
+    require: true,
     ca: process.env.DB_CA_CERT,
   },
 
