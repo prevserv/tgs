@@ -6,31 +6,32 @@ const dotenv = require("dotenv");
 dotenv.config();
 dotenv.config({ path: path.resolve(__dirname, "../../.env"), override: false });
 
-// const connectionString = process.env.DATABASE_URL;
-// if (!connectionString) {
-//   throw new Error("DATABASE_URL is required");
-// }
-
-// const pool = new Pool({
-//   connectionString,
-//   ssl: process.env.PG_SSL === "true" ? { rejectUnauthorized: false } : false,
-// });
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error("DATABASE_URL is required");
+}
 
 const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT || "25060"),
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  ssl: {
-    rejectUnauthorized: true,
-    ca: process.env.DB_CA_CERT,
-  },
-
-  max: 10,                     // Maximum connections in pool
-  idleTimeoutMillis: 30000,    // Close idle connections after 30s
-  connectionTimeoutMillis: 5000 // Timeout for new connections
+  connectionString,
+  ssl: { rejectUnauthorized: false }
+  // ssl: process.env.PG_SSL === "true" ? { rejectUnauthorized: false } : false,
 })
+
+// const pool = new Pool({
+//   host: process.env.DB_HOST,
+//   port: parseInt(process.env.DB_PORT || "25060"),
+//   database: process.env.DB_NAME,
+//   user: process.env.DB_USER,
+//   password: process.env.DB_PASSWORD,
+//   ssl: {
+//     rejectUnauthorized: true,
+//     ca: process.env.DB_CA_CERT,
+//   },
+
+//   max: 10,                     // Maximum connections in pool
+//   idleTimeoutMillis: 30000,    // Close idle connections after 30s
+//   connectionTimeoutMillis: 5000 // Timeout for new connections
+// })
 
 async function query(text, params = []) {
   return pool.query(text, params);
