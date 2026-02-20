@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 
 const authRoutes = require("./routes/auth");
 const adminUserRoutes = require("./routes/adminUsers");
@@ -43,6 +44,15 @@ app.get("/", (req, res) =>
     health: "/health",
   }),
 );
+
+const FRONT_PREFIX = "/tgs-sistema-ponto-frontend";
+const frontDir = path.join(__dirname, "tgs-sistema-ponto-frontend");
+
+app.use(FRONT_PREFIX, express.static(frontDir));
+app.get(FRONT_PREFIX, (req, res) => res.redirect(301, FRONT_PREFIX + "/"));
+app.get(FRONT_PREFIX + "/*", (req, res) => {
+  res.sendFile(path.join(frontDir, "index.html"));
+});
 
 app.use("/auth", authRoutes);
 app.use("/time", timeRoutes);
