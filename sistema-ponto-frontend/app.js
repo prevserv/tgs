@@ -2,7 +2,7 @@
   return document.getElementById(id);
 }
 
-const DEFAULT_API_BASE = "http://localhost:3001";
+const DEFAULT_API_BASE = "https://tgs-8ckkn.ondigitalocean.app";
 
 function getApiBase() {
   const fromStorage = localStorage.getItem("apiBase");
@@ -139,12 +139,12 @@ function getGeo() {
       (err) => {
         const msg =
           err.code === 1
-            ? "PermissÃ£o de localizaÃ§Ã£o negada"
+            ? "Permissão de localização negada"
             : err.code === 2
-              ? "LocalizaÃ§Ã£o indisponÃ­vel"
+              ? "Localização indisponível"
               : err.code === 3
-                ? "Timeout ao obter localizaÃ§Ã£o"
-                : "Erro ao obter localizaÃ§Ã£o";
+                ? "Timeout ao obter localização"
+                : "Erro ao obter localização";
 
         reject(new Error(msg));
       },
@@ -463,10 +463,10 @@ function setActiveView(viewId, { syncRoute = true } = {}) {
     ],
     "view-consultas": ["Consultas", "Registros por periodo"],
     "view-admin-users": [
-      "Admin vê Usuários",
+      "Admin vê usuários",
       "Cadastro e ativação/desativação",
     ],
-    "view-admin-alerts": ["Admin vê Alertas", "Fila auditável e resolução"],
+    "view-admin-alerts": ["Alertas", "Fila auditável e resolução"],
   };
 
   const [t, s] = titles[viewId] || ["Sistema", ""];
@@ -479,6 +479,7 @@ function setActiveView(viewId, { syncRoute = true } = {}) {
 
   if (viewId === "view-ponto") {
     refreshJourneyStatus();
+    loadMyAssignedServiceOrders();
   }
 }
 
@@ -503,6 +504,41 @@ async function loadActiveSO() {
     out.textContent = `OS ativas: ${(data.service_orders || []).length}`;
   } catch (err) {
     out.textContent = `OS: ${err.message}`;
+  }
+}
+
+function renderMyServiceOrdersTable(rows) {
+  const table = qs("mySoTable");
+  if (!table) return;
+
+  const tbody = table.querySelector("tbody");
+  tbody.innerHTML = "";
+
+  for (const so of rows) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${so.id}</td>
+      <td>${so.title || "-"}</td>
+      <td>${so.status || "-"}</td>
+      <td>${so.expected_start ? fmtIsoToBr(so.expected_start) : "-"}</td>
+      <td>${so.expected_duration_hours ?? "-"}h</td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
+async function loadMyAssignedServiceOrders() {
+  const info = qs("mySoInfo");
+  if (!info) return;
+
+  info.textContent = "Minhas OS: carregando...";
+  try {
+    const data = await apiFetch("/service-orders/my", { method: "GET" });
+    const rows = data.service_orders || [];
+    renderMyServiceOrdersTable(rows);
+    info.textContent = `Minhas OS: ${rows.length}`;
+  } catch (err) {
+    info.textContent = `Minhas OS: erro (${err.message})`;
   }
 }
 
@@ -882,6 +918,7 @@ qs("btnEntriesByUser").addEventListener("click", async () => {
     setOut(qs("entriesOut"), data);
   } catch (err) {
     setOut(qs("entriesOut"), err.message);
+    toastError(`${err.message}`);
   }
 });
 
@@ -896,6 +933,7 @@ qs("btnAllEntries").addEventListener("click", async () => {
     setOut(qs("entriesOut"), data);
   } catch (err) {
     setOut(qs("entriesOut"), err.message);
+    toastError(`${err.message}`);
   }
 });
 
