@@ -2,7 +2,7 @@
   return document.getElementById(id);
 }
 
-const DEFAULT_API_BASE = "https://tgs-8ckkn.ondigitalocean.app";
+const DEFAULT_API_BASE = "https://tgs-8ckkn.ondigitalocean.app/";
 
 function getApiBase() {
   const fromStorage = localStorage.getItem("apiBase");
