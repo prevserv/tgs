@@ -15,7 +15,14 @@ async function main() {
   const schemaPath = path.join(__dirname, "postgres", "schema.sql");
   const schemaSql = fs.readFileSync(schemaPath, "utf8");
 
-  const client = new Client({ connectionString });
+  const client = new Client({
+    connectionString,
+    ssl: {
+      rejectUnauthorized: true,
+      ca: (process.env.DB_CA_CERT || "").replace(/\\n/g, "\n"),
+    },
+  });
+
   await client.connect();
 
   try {
