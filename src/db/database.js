@@ -22,7 +22,10 @@ const pool = new Pool({
   database: process.env.DB_NAME,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  ssl: ca ? { rejectUnauthorized: true, ca } : undefined,
+  ssl: {
+    rejectUnauthorized: true,
+    ca: process.env.DB_CA_CERT,
+  },
 
   max: 10,                     // Maximum connections in pool
   idleTimeoutMillis: 30000,    // Close idle connections after 30s
