@@ -1,13 +1,13 @@
 ﻿const fs = require("fs");
 const path = require("path");
 const { Client } = require("pg");
-const { getPgConnectionConfig } = require("./pgConfig");
+const { poolConfig } = require("./database");
 
 async function main() {
   const schemaPath = path.join(__dirname, "postgres", "schema.sql");
   const schemaSql = fs.readFileSync(schemaPath, "utf8");
 
-  const client = new Client(getPgConnectionConfig());
+  const client = new Client(poolConfig);
 
   await client.connect();
 
