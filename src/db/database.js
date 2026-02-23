@@ -1,11 +1,16 @@
 ﻿const { Pool } = require("pg");
 const { getPgConnectionConfig } = require("./pgConfig");
 
+const ca = process.env.CA_CERT
+    ? process.env.CA_CERT.replace(/\\n/g, '\n')
+    : undefined
 const pool = new Pool({
-  ...getPgConnectionConfig(),
-  max: 10, // Maximum connections in pool
-  idleTimeoutMillis: 30000, // Close idle connections after 30s
-  connectionTimeoutMillis: 5000, // Timeout for new connections
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    database: process.env.DB_NAME,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    ssl: ca ? { rejectUnauthorized: true, ca } : undefined,
 });
 
 async function query(text, params = []) {
