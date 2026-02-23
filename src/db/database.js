@@ -1,17 +1,19 @@
 ﻿const { Pool } = require("pg");
-const { getPgConnectionConfig } = require("./pgConfig");
 
 const ca = process.env.CA_CERT
-    ? process.env.CA_CERT.replace(/\\n/g, '\n')
-    : undefined
-const pool = new Pool({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    database: process.env.DB_NAME,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    ssl: ca ? { rejectUnauthorized: true, ca } : undefined,
-});
+  ? process.env.CA_CERT.replace(/\\n/g, "\n")
+  : undefined;
+
+const poolConfig = {
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  database: process.env.DB_NAME,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  ssl: ca ? { rejectUnauthorized: true, ca } : undefined,
+};
+
+const pool = new Pool(poolConfig);
 
 async function query(text, params = []) {
   return pool.query(text, params);
@@ -39,4 +41,4 @@ async function withTransaction(fn) {
 
 const db = { query, withTransaction };
 
-module.exports = { db, pool };
+module.exports = { db, pool, poolConfig };
